@@ -1,0 +1,92 @@
+---
+title: 'Airline Routes'
+author: 'Luis Martinez'
+format:
+  gfm
+---
+
+
+# Libraries 
+
+
+```{python}
+
+import polars as pl 
+import numpy as np 
+import matplotlib.pyplot as plt
+import joypy
+from matplotlib import cm
+
+```
+
+
+# Initial Analysis
+
+We can first see how the data looks like and what can we do with this data. For this we will use Polars lazy frames to keep the memory efficient and only load those columns that we actually need. For this we only load the first three rows of data and then we can get the main idea of the columns we are working with.
+
+
+```{python}
+
+initial = (
+pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
+.head( n = 3 )
+).collect()
+
+initial
+
+```
+Let's review what columns are contained in this dataframe
+
+
+```{python}
+
+initial.glimpse()
+
+```
+
+Lets focus on the Legacy and Ultra Low Cost carriers and see how they behave on their pricing, since this are tow of the most competitive markets.
+
+For the Legacy Carriers we will focus on the following:
+- American Airlines
+- Delta Airlines
+- United Airlines
+
+For Ultra Low Carriers
+- Spirit Airlines
+- Frontier Airlines
+- Allegiant Air
+
+
+Let's focus on their distribution of prices over the years in their routes.
+
+```{python}
+
+legacy = ( pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
+.filter(( pl.col('carrier_lg').is_in(['AA', 'DL', 'UA']) ) & (pl.col('Year') != 2024))
+.group_by([ pl.col('Year'), pl.col('carrier_lg') ])
+.agg(pl.col('fare_lg').mean().alias('Average Rate'))
+.sort(pl.col('Year'))
+).collect().to_pandas()
+
+low_cost = (
+pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
+.filter(( pl.col('carrier_lg').is_in(['NK', 'F9', 'G4']) ) & (pl.col('Year') != 2024))
+.group_by([ pl.col('Year'), pl.col('carrier_lg') ])
+.agg(pl.col('fare_lg').mean().alias('Average Rate'))
+.sort(pl.col('Year'))
+).collect().to_pandas()
+
+fig, axes = plt.subplots(3, 2, figsize=(18, 10), sharex=True)
+
+joypy.joyplot(legacy, by='carrier_lg', column='Average Rate', 
+              ax=axes[:, 0], color='darkgreen', colormap=cm.Pastel1, 
+              fade=True, title="Legacy Carriers: AA, DL, UA")
+
+joypy.joyplot(low_cost, by='carrier_lg', column='Average Rate', 
+              ax=axes[:, 1], color='darkblue', colormap=cm.Pastel2, 
+              fade=True, title="Low Cost Carriers: NK, F9, G4")
+
+plt.tight_layout()
+plt.show()
+	
+```
