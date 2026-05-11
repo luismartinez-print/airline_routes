@@ -236,13 +236,6 @@ for data, label, color in low_cost:
 ax1.set_title('Legacy Carriers')
 ax2.set_title('Low Cost Carriers')
 
-for ax in [ax1, ax2]:
-	ax.set_xlabel('Year')
-	ax.set_ylabel('Rate')
-	ax.set_zlabel('Market Share (%)')
-	ax.legend()
-
-
 plt.tight_layout()
 
 plt.show()

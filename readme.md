@@ -144,17 +144,17 @@ year_routes
 | Year | carrier_lg | Number of Routes |
 |------|------------|------------------|
 | i64  | str        | u32              |
-| 1993 | "DL"       | 1607             |
-| 1993 | "NK"       | 7                |
-| 1993 | "AA"       | 2102             |
 | 1993 | "UA"       | 1126             |
-| 1994 | "AA"       | 533              |
+| 1993 | "NK"       | 7                |
+| 1993 | "DL"       | 1607             |
+| 1993 | "AA"       | 2102             |
+| 1994 | "NK"       | 2                |
 | …    | …          | …                |
 | 2023 | "UA"       | 1146             |
+| 2023 | "NK"       | 105              |
+| 2023 | "DL"       | 891              |
 | 2023 | "AA"       | 1794             |
 | 2023 | "F9"       | 107              |
-| 2023 | "G4"       | 216              |
-| 2023 | "DL"       | 891              |
 
 </div>
 
@@ -280,17 +280,17 @@ rates_market
 | Year | carrier_lg | Average Rate | Average Market Share |
 |------|------------|--------------|----------------------|
 | i64  | str        | f64          | f64                  |
-| 1993 | "UA"       | 244.999103   | 0.555604             |
+| 1993 | "NK"       | 52.204286    | 0.837143             |
 | 1993 | "DL"       | 224.737063   | 0.655252             |
 | 1993 | "AA"       | 253.147574   | 0.605224             |
-| 1993 | "NK"       | 52.204286    | 0.837143             |
+| 1993 | "UA"       | 244.999103   | 0.555604             |
 | 1994 | "DL"       | 228.005424   | 0.648814             |
 | …    | …          | …            | …                    |
-| 2023 | "NK"       | 116.626286   | 0.590725             |
+| 2023 | "AA"       | 300.202664   | 0.664086             |
 | 2023 | "G4"       | 105.35662    | 0.877016             |
-| 2023 | "F9"       | 118.473458   | 0.722147             |
-| 2023 | "UA"       | 272.985419   | 0.711748             |
+| 2023 | "NK"       | 116.626286   | 0.590725             |
 | 2023 | "DL"       | 300.043861   | 0.600773             |
+| 2023 | "F9"       | 118.473458   | 0.722147             |
 
 </div>
 
@@ -331,20 +331,9 @@ for data, label, color in low_cost:
 ax1.set_title('Legacy Carriers')
 ax2.set_title('Low Cost Carriers')
 
-for ax in [ax1, ax2]:
-    ax.set_xlabel('Year')
-    ax.set_ylabel('Rate')
-    ax.set_zlabel('Market Share (%)')
-    ax.legend()
-
-
 plt.tight_layout()
 
 plt.show()
 ```
 
-    C:\Users\luism\AppData\Local\Temp\ipykernel_10640\2219215368.py:44: UserWarning:
-
-    Tight layout not applied. tight_layout cannot make Axes height small enough to accommodate all Axes decorations.
-
-![](readme_files/figure-commonmark/cell-12-output-2.png)
+![](readme_files/figure-commonmark/cell-12-output-1.png)
