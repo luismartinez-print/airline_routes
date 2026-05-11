@@ -16,6 +16,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import joypy
 from matplotlib import cm
+import matplotlib.gridspec as gridspec
+import seaborn as sns
 
 ```
 
@@ -44,7 +46,28 @@ initial.glimpse()
 
 ```
 
-Lets focus on the Legacy and Ultra Low Cost carriers and see how they behave on their pricing, since this are tow of the most competitive markets.
+# Overall View
+
+One of the first questions we want to answer is how is the distribution of prices have changed during these years, specifically for those in that control the market such as the legacy carriers.
+
+
+```{python}
+
+year_rates = (
+pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
+.select(['Year' ,'quarter' ,'fare_lg'])
+).collect().to_pandas()
+
+fig, axes = joypy.joyplot(year_rates, by = 'Year', column = 'fare_lg', x_range = [0, 500], kind = 'lognorm', linewidth = 0.25,
+normalize = True, colormap = cm.Blues_r, title = 'Yearly Distribution of Large Carriers Fares')
+plt.show()
+
+```
+We can see that prices have been shifting towards the left due to the pandemic and then it is starting to shif again to the right through more expensive mean prices, however the disperson of the prices have been wide along the years.
+
+# Legacy and Low Carrier 
+
+Lets focus on the Legacy and Ultra Low Cost carriers and see how they behave on their pricing and routes, since this are tow of the most competitive markets.
 
 For the Legacy Carriers we will focus on the following:
 - American Airlines
@@ -56,6 +79,52 @@ For Ultra Low Carriers
 - Frontier Airlines
 - Allegiant Air
 
+First let's investigate how their routes have behaved over the years and who has more routes than the others up to 2024 where our data is incomplete.
+
+
+
+```{python}
+
+year_routes = (
+	pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
+        .filter(( pl.col('carrier_lg').is_in(['AA', 'DL', 'UA', 'NK', 'F9', 'G4']) ) & (pl.col('Year') != 2024))
+        .group_by([ pl.col('Year'), pl.col('carrier_lg') ])
+        .agg(pl.col('tbl1apk').count().alias('Number of Routes'))
+        .sort(pl.col('Year'))
+        ).collect()
+
+year_routes
+
+```
+
+
+```{python}
+
+aa_data = year_routes.filter(pl.col('carrier_lg') == 'AA')
+dl_data = year_routes.filter(pl.col('carrier_lg') == 'DL')
+ua_data = year_routes.filter(pl.col('carrier_lg') == 'UA')
+f9_data = year_routes.filter(pl.col('carrier_lg') == 'F9')
+nk_data = year_routes.filter(pl.col('carrier_lg') == 'NK')
+g4_data = year_routes.filter(pl.col('carrier_lg') == 'G4')
+
+fig, ax = plt.subplots(2, 1)
+ax[0].plot(aa_data['Year'], aa_data['Number of Routes'], label='American Airlines')
+ax[0].plot(dl_data['Year'], dl_data['Number of Routes'], label='Delta Airlines')
+ax[0].plot(ua_data['Year'], ua_data['Number of Routes'], label='United Airlines')
+ax[0].set_title('Time Series of Routes for Legacy Airlines')
+ax[0].legend(loc = 'upper left')
+ax[1].plot(f9_data['Year'], f9_data['Number of Routes'], label='Frontier Airlines')
+ax[1].plot(nk_data['Year'], nk_data['Number of Routes'], label='Spirit Airlines')
+ax[1].plot(g4_data['Year'], g4_data['Number of Routes'], label='Allegiant Air')
+ax[1].set_title('Time Series of Routes for Low Cost Carriers')
+ax[1].legend()
+plt.tight_layout()
+plt.show()
+
+```
+This results are interesting, since we can see the rapid growth in Allegiant Airlines around the 2008 mark, well this is because they went public during that time and started the mid-size cities destinations. 
+
+Then in the legacy airlines we can see that AA has been dominant over the years but Delta and United have keeped up.
 
 Let's focus on their distribution of prices over the years in their routes.
 
@@ -75,18 +144,107 @@ pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
 .agg(pl.col('fare_lg').mean().alias('Average Rate'))
 .sort(pl.col('Year'))
 ).collect().to_pandas()
+	
+```
+Let's view the distribution of the Legacy Airlines
 
-fig, axes = plt.subplots(3, 2, figsize=(18, 10), sharex=True)
+```{python}
 
-joypy.joyplot(legacy, by='carrier_lg', column='Average Rate', 
-              ax=axes[:, 0], color='darkgreen', colormap=cm.Pastel1, 
-              fade=True, title="Legacy Carriers: AA, DL, UA")
+fig1, ax1 = joypy.joyplot(legacy, 
+                          by='carrier_lg', 
+                          column='Average Rate', 
+                          figsize=(12, 8),
+                          color='darkgreen', 
+                          colormap=cm.Pastel1, 
+                          fade=True, 
+                          title="Legacy Carriers: AA, DL, UA",
+                          overlap=1.5)
+plt.show()
 
-joypy.joyplot(low_cost, by='carrier_lg', column='Average Rate', 
-              ax=axes[:, 1], color='darkblue', colormap=cm.Pastel2, 
-              fade=True, title="Low Cost Carriers: NK, F9, G4")
+```
+Let's see the distribution of the Low Carrier Airlines
+
+```{python}
+
+fig2, ax2 = joypy.joyplot(low_cost, 
+                          by='carrier_lg', 
+                          column='Average Rate', 
+                          figsize=(12, 8),
+                          color='darkblue', 
+                          colormap=cm.Pastel2, 
+                          fade=True, 
+                          title="Low Cost Carriers: NK, F9, G4",
+                          overlap=1.5)
+plt.show()
+
+```
+
+After looking at this distributions another question we might ask ourselves is with their pricing at a certain point in time how was their market share of that market.
+
+Meaning when having an average rate in a route or market, how much did they "owned" of that market, this will give us a sense of volume. For this let's first try to visualize with a 3 dimensonial plot. We will have years on the x axis, meaning years go from left to right, Average rate on the y axis meaning how tall the line is, is the rate and on the z axis their market share their depth is how market they had on that year.
+
+
+```{python}
+
+rates_market = (
+	pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
+        .filter(( pl.col('carrier_lg').is_in(['AA', 'DL', 'UA', 'NK', 'F9', 'G4']) ) & (pl.col('Year') != 2024))
+        .group_by([ pl.col('Year'), pl.col('carrier_lg') ])
+        .agg(pl.col('fare_lg').mean().alias('Average Rate'), pl.col('large_ms').mean().alias('Average Market Share'))
+        .sort(pl.col('Year'))
+        ).collect()
+
+rates_market
+
+```
+
+```{python}
+
+aa_rate = rates_market.filter(pl.col('carrier_lg') == 'AA')
+dl_rate = rates_market.filter(pl.col('carrier_lg') == 'DL')
+ua_rate = rates_market.filter(pl.col('carrier_lg') == 'UA')
+f9_rate = rates_market.filter(pl.col('carrier_lg') == 'F9')
+nk_rate = rates_market.filter(pl.col('carrier_lg') == 'NK')
+g4_rate = rates_market.filter(pl.col('carrier_lg') == 'G4')
+
+legacies = [
+	(aa_rate, 'AA', 'Red'),
+	(dl_rate, 'DL', 'Navy'),
+	(ua_rate, 'UA', 'Gray')
+]
+
+low_cost = [
+	(f9_rate, 'F9', 'Green'),
+	(nk_rate, 'NK', 'Yellow'),
+	(g4_rate, 'G4', 'Orange')
+]
+
+fig = plt.figure(figsize = (10, 12))
+ax1 = fig.add_subplot(2, 1, 1, projection = '3d')
+ax2 = fig.add_subplot(2, 1, 2, projection = '3d')
+for data, label, color in legacies:
+	ax1.scatter(data['Year'], data['Average Rate'], data['Average Market Share'], label = label, c = color, s = 50)
+	
+	for x, y, z in zip(data['Year'], data['Average Rate'], data['Average Market Share']):
+		ax1.plot([x,x], [y,y], [0,z], c = color, label = label, alpha = 0.3, linestyle = '--')
+
+for data, label, color in low_cost:
+	ax2.scatter(data['Year'], data['Average Rate'], data['Average Market Share'], label = label, c = color, s = 50)
+	for x, y, z in zip(data['Year'], data['Average Rate'], data['Average Market Share']):
+		ax1.plot([x,x], [y,y], [0,z], c = color, label = label, alpha = 0.3, linestyle = '--')
+
+ax1.set_title('Legacy Carriers')
+ax2.set_title('Low Cost Carriers')
+
+for ax in [ax1, ax2]:
+	ax.set_xlabel('Year')
+	ax.set_ylabel('Rate')
+	ax.set_zlabel('Market Share (%)')
+	ax.legend()
+
 
 plt.tight_layout()
+
 plt.show()
-	
+
 ```
