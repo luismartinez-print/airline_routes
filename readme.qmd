@@ -233,7 +233,7 @@ for data, label, color in low_cost:
 	ax2.scatter(data['Year'], data['Average Rate'], data['Average Market Share'], label = label, c = color, s = 50)
 
 	for x, y, z in zip(data['Year'], data['Average Rate'], data['Average Market Share']):
-		ax1.plot([x,x], [y,y], [0,z], c = color, label = label, alpha = 0.3, linestyle = '--')
+		ax2.plot([x,x], [y,y], [0,z], c = color, label = label, alpha = 0.3, linestyle = '--')
 
 ax1.set_title('Legacy Carriers')
 ax2.set_title('Low Cost Carriers')
