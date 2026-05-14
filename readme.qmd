@@ -19,6 +19,8 @@ import joypy
 from matplotlib import cm
 import matplotlib.gridspec as gridspec
 import seaborn as sns
+from scipy.interpolate import griddata
+import pandas as pd
 
 ```
 
@@ -224,22 +226,299 @@ fig = plt.figure(figsize = (10, 12))
 ax1 = fig.add_subplot(2, 1, 1, projection = '3d')
 ax2 = fig.add_subplot(2, 1, 2, projection = '3d')
 for data, label, color in legacies:
-	ax1.scatter(data['Year'], data['Average Rate'], data['Average Market Share'], label = label, c = color, s = 50)
+	ax1.scatter(data['Year'].to_numpy(), data['Average Rate'].to_numpy(), data['Average Market Share'].to_numpy(), label = label, c = color, s = 50)
 	
-	for x, y, z in zip(data['Year'], data['Average Rate'], data['Average Market Share']):
-		ax1.plot([x,x], [y,y], [0,z], c = color, label = label, alpha = 0.3, linestyle = '--')
+	for x, y, z in zip(data['Year'].to_numpy(), data['Average Rate'].to_numpy(), data['Average Market Share'].to_numpy()):
+		ax1.plot([x,x], [y,y], [0,z], c = color,  alpha = 0.3, linestyle = '--')
 
 for data, label, color in low_cost:
-	ax2.scatter(data['Year'], data['Average Rate'], data['Average Market Share'], label = label, c = color, s = 50)
-
-	for x, y, z in zip(data['Year'], data['Average Rate'], data['Average Market Share']):
-		ax2.plot([x,x], [y,y], [0,z], c = color, label = label, alpha = 0.3, linestyle = '--')
+	ax2.scatter(data['Year'].to_numpy(), data['Average Rate'].to_numpy(), data['Average Market Share'].to_numpy(), label = label, c = color, s = 50)
+	for x, y, z in zip(data['Year'].to_numpy(), data['Average Rate'].to_numpy(), data['Average Market Share'].to_numpy()):
+		ax2.plot([x,x], [y,y], [0,z], c = color,  alpha = 0.3, linestyle = '--')
 
 ax1.set_title('Legacy Carriers')
 ax2.set_title('Low Cost Carriers')
+ax1.legend()
+ax2.legend()
 
 plt.tight_layout()
 
 plt.show()
+
+```
+On the legacy airlines we can see that on the first years Delta was always with the lowest rate but we can see that as time goes on they slowl go further down in our cube, meaning that their average price in the large routes got more expensive. American has a similar pattern but they started with high rates and then lower them and then moved along with Delta. The same can be said with United Airlines. 
+
+Now on the low cost carriers another story is being told. We can clearly see a little down hill from the points. In the early establishment of the Fare Act they owned a lot of the market with predatory pricing but it seems that as time goes on thei market share dropped.
+
+Lets look at this as a surface, because this explains why with the birth of Revenue Management and capacity allocation, this low cost carriers started loosing their market share, which it was in the beggining what they were looking for.
+
+
+
+```{python}
+
+fig = plt.figure(figsize=(10, 8))
+ax = fig.add_subplot(111, projection='3d')
+
+for data, label, color in low_cost:
+    ax.plot_trisurf(data['Year'], 
+                    data['Average Rate'], 
+                    data['Average Market Share'], 
+                    color=color, alpha=0.5)
+    
+    ax.scatter(data['Year'], data['Average Rate'], data['Average Market Share'], 
+               c=color, s=40, edgecolors='black', label = label)
+
+ax.set_title('Low Cost Carrier Market Surfaces')
+ax.legend()
+plt.show()
+
+```
+
+It is a little hard to visualize but we can see that Spirit has that steeper cliff and the others follow along.
+
+
+# Predictive Analytics
+
+Now let's explore a little bit of how we can use predictive analytics, or supervised learning if you are fancy, to predict a price of a fare. 
+
+
+Let's begin with a simple linear regression model and move our way up to a Neural Network which is the state of the art for regression problems. I mean regression because it is a continous variable.
+
+So I want predict or explain the dispersion of the fare based on some other covariates. 
+
+Let's pick some of them for our analysis
+
+
+```{python}
+
+full_data = (
+	pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
+	.select(
+	[
+	'fare', 'nsmiles', 'passengers', 'large_ms', 'lf_ms', 'quarter',  'carrier_lg'
+	]
+	)
+	.with_columns(
+	pl.col('quarter').cast(pl.String)
+	)
+	.drop_nulls()
+).collect()
+
+full_data = full_data.to_pandas()
+
+```
+
+First lets visualize our target variable, specially in regression this is important since it tells us what distribution we should use. 
+
+To do this we can use a kde plot or a histogram
+
+
+```{python}
+
+sns.displot(x = 'fare', kind = 'kde', data = full_data)
+plt.xlim(0,600)
+plt.show()
+
+```
+We do see a little bit of a tail so for kicks, let's vizualise the log of the fare which is almost the same as a gamma distribution.
+
+
+```{python}
+
+log_fare = np.log(full_data['fare'] + 1)
+sns.displot(x = log_fare, kind = 'kde')
+plt.show()
+
+full_data['log_fare'] = log_fare
+
+```
+
+## Data Partition
+
+Now we can do the data partition for the training and test data to test both the in sample goodness of fit and then the out of sample goodnes of fit. 
+
+This is basically see how well our model could be trained on, the more complex the model the better it will be but we will have to sacrifice interpretability in the way.
+
+We can do this the manual way or with sklearn, for this case let's use sklearn since it is simpler.
+
+```{python}
+
+from sklearn.model_selection import train_test_split
+
+train_data, test_data = train_test_split(
+	full_data,
+	test_size = 0.2,
+	random_state = 10,
+)
+
+
+```
+
+
+
+## Linear Regression
+
+
+For our first model we will be using linear regression, this is the simples and most interpretable model of them all. 
+
+For this we will use stats models package which is very similar to how R works.
+
+First lets import the function.
+
+
+```{python}
+
+import statsmodels.formula.api as smf
+
+```
+
+Then we can construct a string with our list of covariates that will be our formula for the linear regression.
+
+
+```{python}
+
+formula_fare = 'fare ~ nsmiles + passengers + large_ms + lf_ms + C(quarter) +  C(carrier_lg)'
+formula_log_fare = 'log_fare ~ nsmiles + passengers + large_ms + lf_ms + C(quarter) +  C(carrier_lg)'
+
+lm1 = smf.ols(formula = formula_fare, data = train_data).fit()
+lm2 = smf.ols(formula = formula_log_fare, data = train_data).fit()
+
+print(lm1.summary())
+print(lm2.summary())
+
+
+```
+
+So here we can see that looking at the goodness of fit or the reduction in the sum of squares called R squared, our log model worked better. This is because we are compressing the fares into a more like normal distribution. Linear regression is based on that the target variable follows a linear regression, we can also use a gamma regression for tailed distributions.
+
+Now lets predict and see how well is the out of sample prediction with metrics like MAE, RMSE, MAPE
+
+First let's create a function to give us this metrics, since we will be using it later on.
+
+
+```{python}
+
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
+
+def get_metrics(actual, predicted):
+	mae = mean_absolute_error(actual, predicted)
+	rmse = np.sqrt(mean_squared_error(actual, predicted))
+	mape = mean_absolute_percentage_error(actual, predicted)
+	print(f"MAE:  ${mae:.2f}")
+	print(f"RMSE: ${rmse:.2f}")
+	print(f"MAPE: {mape:.2%}")
+
+	
+
+```
+
+Now we can get the predictions for both linear regressions
+
+
+```{python}
+
+lm1_pred = lm1.predict(test_data.drop(['fare', 'log_fare'], axis = 1)) 
+lm2_pred = np.exp(lm2.predict(test_data.drop(['fare', 'log_fare'], axis = 1))) - 1
+
+get_metrics(test_data['fare'], lm1_pred)
+get_metrics(test_data['fare'], lm2_pred)
+
+```
+
+## Generalized Linear Model
+
+
+```{python}
+
+from pygam import LinearGAM, s, f
+
+X = train_data.drop(['fare', 'log_fare'], axis = 1)
+y = train_data['fare'].values
+y_log = train_data['log_fare'].values
+
+```
+
+Now we can train the linear GAM and specify how many degrees of freedom we want or in others words how many splines to divide the cubic function, the more freedom the more smoothness of the line however the more tendency to overfit. We will use 4 since that is the default for first experiment.
+
+Before we do the formula we need to do some label encoding, since this package is built on pure numpy and not with strings or pandas categorical objects.
+
+
+```{python}
+
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+
+x_encoded = X.copy()
+
+x_encoded.iloc[:, 4] = le.fit_transform(x_encoded.iloc[:,4])
+x_encoded.iloc[:, 5] = le.fit_transform(x_encoded.iloc[:,5])
+
+X_encoded = x_encoded.values.astype(float)
+
+```
+
+```{python}
+
+gam1 = LinearGAM(s(0, n_splines = 7) + s(1, n_splines = 7) + s(2, n_splines = 7) + s(3, n_splines = 7) + f(4) + f(5)).fit(X_encoded,y)
+gam2 = LinearGAM(s(0, n_splines = 7) + s(1, n_splines = 7) + s(2, n_splines = 7) + s(3, n_splines = 7) + f(4) + f(5)).fit(X_encoded,y_log)
+
+print(gam1.summary())
+print(gam2.summary())
+
+```
+
+So now we can visualize the splines and see how non linear relationships are captured by GAM, which is a more complicated model than a OLS
+
+Using partial dependece we can see that as the market share of the large carrier increases there is a non linear relationship with the fare on the partial dependece
+
+```{python}
+
+XX = gam1.generate_X_grid(term=2)
+
+pdep, confi = gam1.partial_dependence(term=2, X=XX, width=0.95)
+
+plt.figure(figsize=(8, 5))
+plt.plot(XX[:, 2], pdep, label='Partial Dependence', color='blue')
+plt.fill_between(XX[:, 2], confi[:, 0], confi[:, 1], alpha=0.2, color='blue', label='95% CI')
+
+plt.title(f'Effect of Feature Large Market Share on Fare')
+plt.xlabel('Market Share on %')
+plt.ylabel('Partial Effect')
+plt.legend()
+plt.grid(True, linestyle='--', alpha=0.7)
+plt.show()
+
+```
+
+Now we can create the out of sample test by looking how it does on unseen data, but first we have to encode the test data as well
+
+
+```{python}
+
+X_test = test_data.drop(['fare', 'log_fare'], axis = 1)
+x_test_encoded = X_test.copy()
+
+x_test_encoded.iloc[:, 4] = le.fit_transform(x_test_encoded.iloc[:,4])
+x_test_encoded.iloc[:, 5] = le.fit_transform(x_test_encoded.iloc[:,5])
+
+X_test_encoded = x_test_encoded.values.astype(float)
+
+```
+
+
+
+```{python}
+
+gam1_pred = gam1.predict(X_test_encoded)
+gam2_pred = np.exp(gam2.predict(X_test_encoded)) - 1
+
+```
+
+
+```{python}
+
+get_metrics(test_data['fare'].values, gam1_pred)
+get_metrics(test_data['fare'].values, gam2_pred)
 
 ```
