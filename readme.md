@@ -146,16 +146,16 @@ year_routes
 | Year | carrier_lg | Number of Routes |
 |------|------------|------------------|
 | i64  | str        | u32              |
-| 1993 | "AA"       | 2102             |
-| 1993 | "NK"       | 7                |
 | 1993 | "UA"       | 1126             |
+| 1993 | "NK"       | 7                |
 | 1993 | "DL"       | 1607             |
+| 1993 | "AA"       | 2102             |
 | 1994 | "AA"       | 533              |
 | …    | …          | …                |
-| 2023 | "UA"       | 1146             |
-| 2023 | "NK"       | 105              |
 | 2023 | "DL"       | 891              |
 | 2023 | "G4"       | 216              |
+| 2023 | "UA"       | 1146             |
+| 2023 | "F9"       | 107              |
 | 2023 | "AA"       | 1794             |
 
 </div>
@@ -283,16 +283,16 @@ rates_market
 |------|------------|--------------|----------------------|
 | i64  | str        | f64          | f64                  |
 | 1993 | "UA"       | 244.999103   | 0.555604             |
-| 1993 | "AA"       | 253.147574   | 0.605224             |
 | 1993 | "NK"       | 52.204286    | 0.837143             |
 | 1993 | "DL"       | 224.737063   | 0.655252             |
+| 1993 | "AA"       | 253.147574   | 0.605224             |
 | 1994 | "DL"       | 228.005424   | 0.648814             |
 | …    | …          | …            | …                    |
-| 2023 | "NK"       | 116.626286   | 0.590725             |
-| 2023 | "G4"       | 105.35662    | 0.877016             |
-| 2023 | "AA"       | 300.202664   | 0.664086             |
-| 2023 | "UA"       | 272.985419   | 0.711748             |
 | 2023 | "DL"       | 300.043861   | 0.600773             |
+| 2023 | "NK"       | 116.626286   | 0.590725             |
+| 2023 | "F9"       | 118.473458   | 0.722147             |
+| 2023 | "UA"       | 272.985419   | 0.711748             |
+| 2023 | "G4"       | 105.35662    | 0.877016             |
 
 </div>
 
@@ -396,6 +396,10 @@ other covariates.
 
 Let’s pick some of them for our analysis
 
+Since we do not need all of the features to predict the fare, we will
+only read the ones we need into our memory. For this we use Polars
+Lazyframes
+
 ``` python
 full_data = (
     pl.scan_csv('US Airline Flight Routes and Fares 1993-2024.csv')
@@ -411,7 +415,42 @@ full_data = (
 ).collect()
 
 full_data = full_data.to_pandas()
+
+full_data
 ```
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|        | fare   | nsmiles | passengers | large_ms | lf_ms  | quarter | carrier_lg |
+|--------|--------|---------|------------|----------|--------|---------|------------|
+| 0      | 81.43  | 970     | 180        | 1.0000   | 1.0000 | 3       | G4         |
+| 1      | 208.93 | 970     | 19         | 0.4659   | 0.1193 | 3       | DL         |
+| 2      | 184.56 | 580     | 204        | 0.9968   | 0.9968 | 3       | WN         |
+| 3      | 182.64 | 580     | 264        | 0.9774   | 0.9774 | 3       | AA         |
+| 4      | 177.11 | 328     | 398        | 0.6061   | 0.3939 | 3       | WN         |
+| ...    | ...    | ...     | ...        | ...      | ...    | ...     | ...        |
+| 244338 | 278.70 | 665     | 207        | 0.7503   | 0.2359 | 1       | DL         |
+| 244339 | 148.69 | 724     | 277        | 0.8255   | 0.8255 | 1       | G4         |
+| 244340 | 330.19 | 724     | 70         | 0.8057   | 0.8057 | 1       | AA         |
+| 244341 | 95.65  | 550     | 178        | 1.0000   | 1.0000 | 1       | G4         |
+| 244342 | 330.15 | 550     | 57         | 0.5212   | 0.5212 | 1       | AA         |
+
+<p>244343 rows × 7 columns</p>
+</div>
+
+We can then move this into a pandas dataframe since most of the modules
+we will use, utilize pandas dataframes objects as arguments
 
 First lets visualize our target variable, specially in regression this
 is important since it tells us what distribution we should use.
@@ -438,6 +477,56 @@ full_data['log_fare'] = log_fare
 ```
 
 ![](readme_files/figure-commonmark/cell-16-output-1.png)
+
+There are two main ways in which can start noricing which variables have
+good predicting power.
+
+We can see categorical relationships and relational meaning two
+numerical coviariates.
+
+Let’s start by seeing their summary stats.
+
+``` python
+full_data.describe()
+```
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+&#10;    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+&#10;    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+
+|  | fare | nsmiles | passengers | large_ms | lf_ms | log_fare |
+|----|----|----|----|----|----|----|
+| count | 244343.000000 | 244343.000000 | 244343.000000 | 244343.000000 | 244343.000000 | 244343.000000 |
+| mean | 218.443940 | 1189.421056 | 301.442558 | 0.665436 | 0.450438 | 5.327994 |
+| std | 79.533099 | 702.889233 | 512.498452 | 0.224410 | 0.332669 | 0.360239 |
+| min | 50.000000 | 109.000000 | 0.000000 | 0.100000 | 0.010000 | 3.931826 |
+| 25% | 164.690000 | 626.000000 | 22.000000 | 0.480000 | 0.158000 | 5.110119 |
+| 50% | 209.270000 | 1021.000000 | 114.000000 | 0.652800 | 0.360000 | 5.348392 |
+| 75% | 262.615000 | 1735.000000 | 342.000000 | 0.872100 | 0.750000 | 5.574490 |
+| max | 3377.000000 | 2724.000000 | 8301.000000 | 1.000000 | 1.000000 | 8.125039 |
+
+</div>
+
+One of the first things we can see is that almoast all variables have a
+very high standard deviation, if we assume they follow a normal
+distribution but one of the most obvious relationships we might see is
+the number of miles with the fare. Let’s look at a scatterplot.
+
+``` python
+sns.relplot(x = 'nsmiles', y = 'fare', data = full_data)
+plt.show()
+```
+
+![](readme_files/figure-commonmark/cell-18-output-1.png)
 
 ## Data Partition
 
@@ -495,8 +584,8 @@ print(lm2.summary())
     Dep. Variable:                   fare   R-squared:                       0.377
     Model:                            OLS   Adj. R-squared:                  0.377
     Method:                 Least Squares   F-statistic:                     1623.
-    Date:                Thu, 14 May 2026   Prob (F-statistic):               0.00
-    Time:                        15:53:06   Log-Likelihood:            -1.0866e+06
+    Date:                Mon, 01 Jun 2026   Prob (F-statistic):               0.00
+    Time:                        21:12:32   Log-Likelihood:            -1.0866e+06
     No. Observations:              195474   AIC:                         2.173e+06
     Df Residuals:                  195400   BIC:                         2.174e+06
     Df Model:                          73                                         
@@ -594,8 +683,8 @@ print(lm2.summary())
     Dep. Variable:               log_fare   R-squared:                       0.423
     Model:                            OLS   Adj. R-squared:                  0.423
     Method:                 Least Squares   F-statistic:                     1966.
-    Date:                Thu, 14 May 2026   Prob (F-statistic):               0.00
-    Time:                        15:53:06   Log-Likelihood:                -23976.
+    Date:                Mon, 01 Jun 2026   Prob (F-statistic):               0.00
+    Time:                        21:12:32   Log-Likelihood:                -23976.
     No. Observations:              195474   AIC:                         4.810e+04
     Df Residuals:                  195400   BIC:                         4.885e+04
     Df Model:                          73                                         
@@ -693,7 +782,7 @@ So here we can see that looking at the goodness of fit or the reduction
 in the sum of squares called R squared, our log model worked better.
 This is because we are compressing the fares into a more like normal
 distribution. Linear regression is based on that the target variable
-follows a linear regression, we can also use a gamma regression for
+follows a normal distribution, we can also use a gamma regression for
 tailed distributions.
 
 Now lets predict and see how well is the out of sample prediction with
@@ -831,7 +920,7 @@ print(gam2.summary())
              are typically lower than they should be, meaning that the tests reject the null too readily.
     None
 
-    C:\Users\luism\AppData\Local\Temp\ipykernel_34388\4115508990.py:4: UserWarning:
+    C:\Users\luism\AppData\Local\Temp\ipykernel_68676\4115508990.py:4: UserWarning:
 
     KNOWN BUG: p-values computed in this summary are likely much smaller than they should be. 
      
@@ -841,7 +930,7 @@ print(gam2.summary())
     github.com/dswah/pyGAM/issues/163 
 
 
-    C:\Users\luism\AppData\Local\Temp\ipykernel_34388\4115508990.py:5: UserWarning:
+    C:\Users\luism\AppData\Local\Temp\ipykernel_68676\4115508990.py:5: UserWarning:
 
     KNOWN BUG: p-values computed in this summary are likely much smaller than they should be. 
      
@@ -874,7 +963,7 @@ plt.grid(True, linestyle='--', alpha=0.7)
 plt.show()
 ```
 
-![](readme_files/figure-commonmark/cell-25-output-1.png)
+![](readme_files/figure-commonmark/cell-27-output-1.png)
 
 Now we can create the out of sample test by looking how it does on
 unseen data, but first we have to encode the test data as well
@@ -905,3 +994,8 @@ get_metrics(test_data['fare'].values, gam2_pred)
     MAE:  $59.29
     RMSE: $79.37
     MAPE: 26.19%
+
+## Neural Network
+
+For now we will develop a Neural Network, which is based on the linear
+combination of non linear activations

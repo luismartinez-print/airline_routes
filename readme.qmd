@@ -288,6 +288,9 @@ So I want predict or explain the dispersion of the fare based on some other cova
 
 Let's pick some of them for our analysis
 
+Since we do not need all of the features to predict the fare, we will only read the ones we need into our memory.
+For this we use Polars Lazyframes
+
 
 ```{python}
 
@@ -306,7 +309,10 @@ full_data = (
 
 full_data = full_data.to_pandas()
 
+full_data
+
 ```
+We can then move this into a pandas dataframe since most of the modules we will use, utilize pandas dataframes objects as arguments
 
 First lets visualize our target variable, specially in regression this is important since it tells us what distribution we should use. 
 
@@ -332,6 +338,28 @@ plt.show()
 full_data['log_fare'] = log_fare
 
 ```
+
+There are two main ways in which can start noricing which variables have good predicting power.
+
+We can see categorical relationships and relational meaning two numerical coviariates.
+
+Let's start by seeing their summary stats.
+
+```{python}
+
+full_data.describe()
+
+```
+One of the first things we can see is that almoast all variables have a very high standard deviation, if we assume they follow a normal distribution but one of the most obvious relationships we might see is the number of miles with the fare. Let's look at a scatterplot.
+
+
+```{python}
+
+sns.relplot(x = 'nsmiles', y = 'fare', data = full_data)
+plt.show()
+
+```
+
 
 ## Data Partition
 
@@ -389,7 +417,7 @@ print(lm2.summary())
 
 ```
 
-So here we can see that looking at the goodness of fit or the reduction in the sum of squares called R squared, our log model worked better. This is because we are compressing the fares into a more like normal distribution. Linear regression is based on that the target variable follows a linear regression, we can also use a gamma regression for tailed distributions.
+So here we can see that looking at the goodness of fit or the reduction in the sum of squares called R squared, our log model worked better. This is because we are compressing the fares into a more like normal distribution. Linear regression is based on that the target variable follows a normal distribution, we can also use a gamma regression for tailed distributions.
 
 Now lets predict and see how well is the out of sample prediction with metrics like MAE, RMSE, MAPE
 
@@ -522,3 +550,7 @@ get_metrics(test_data['fare'].values, gam1_pred)
 get_metrics(test_data['fare'].values, gam2_pred)
 
 ```
+
+## Neural Network
+
+For now we will develop a Neural Network, which is based on the linear combination of non linear activations
