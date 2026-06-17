@@ -147,16 +147,16 @@ year_routes
 |------|------------|------------------|
 | i64  | str        | u32              |
 | 1993 | "UA"       | 1126             |
+| 1993 | "AA"       | 2102             |
 | 1993 | "NK"       | 7                |
 | 1993 | "DL"       | 1607             |
-| 1993 | "AA"       | 2102             |
-| 1994 | "AA"       | 533              |
+| 1994 | "NK"       | 2                |
 | …    | …          | …                |
 | 2023 | "DL"       | 891              |
-| 2023 | "G4"       | 216              |
-| 2023 | "UA"       | 1146             |
 | 2023 | "F9"       | 107              |
+| 2023 | "G4"       | 216              |
 | 2023 | "AA"       | 1794             |
+| 2023 | "NK"       | 105              |
 
 </div>
 
@@ -282,17 +282,17 @@ rates_market
 | Year | carrier_lg | Average Rate | Average Market Share |
 |------|------------|--------------|----------------------|
 | i64  | str        | f64          | f64                  |
-| 1993 | "UA"       | 244.999103   | 0.555604             |
-| 1993 | "NK"       | 52.204286    | 0.837143             |
 | 1993 | "DL"       | 224.737063   | 0.655252             |
+| 1993 | "UA"       | 244.999103   | 0.555604             |
 | 1993 | "AA"       | 253.147574   | 0.605224             |
-| 1994 | "DL"       | 228.005424   | 0.648814             |
+| 1993 | "NK"       | 52.204286    | 0.837143             |
+| 1994 | "AA"       | 252.16015    | 0.609437             |
 | …    | …          | …            | …                    |
-| 2023 | "DL"       | 300.043861   | 0.600773             |
-| 2023 | "NK"       | 116.626286   | 0.590725             |
 | 2023 | "F9"       | 118.473458   | 0.722147             |
-| 2023 | "UA"       | 272.985419   | 0.711748             |
+| 2023 | "NK"       | 116.626286   | 0.590725             |
 | 2023 | "G4"       | 105.35662    | 0.877016             |
+| 2023 | "AA"       | 300.202664   | 0.664086             |
+| 2023 | "UA"       | 272.985419   | 0.711748             |
 
 </div>
 
@@ -584,8 +584,8 @@ print(lm2.summary())
     Dep. Variable:                   fare   R-squared:                       0.377
     Model:                            OLS   Adj. R-squared:                  0.377
     Method:                 Least Squares   F-statistic:                     1623.
-    Date:                Mon, 01 Jun 2026   Prob (F-statistic):               0.00
-    Time:                        21:12:32   Log-Likelihood:            -1.0866e+06
+    Date:                Wed, 17 Jun 2026   Prob (F-statistic):               0.00
+    Time:                        12:03:14   Log-Likelihood:            -1.0866e+06
     No. Observations:              195474   AIC:                         2.173e+06
     Df Residuals:                  195400   BIC:                         2.174e+06
     Df Model:                          73                                         
@@ -683,8 +683,8 @@ print(lm2.summary())
     Dep. Variable:               log_fare   R-squared:                       0.423
     Model:                            OLS   Adj. R-squared:                  0.423
     Method:                 Least Squares   F-statistic:                     1966.
-    Date:                Mon, 01 Jun 2026   Prob (F-statistic):               0.00
-    Time:                        21:12:32   Log-Likelihood:                -23976.
+    Date:                Wed, 17 Jun 2026   Prob (F-statistic):               0.00
+    Time:                        12:03:14   Log-Likelihood:                -23976.
     No. Observations:              195474   AIC:                         4.810e+04
     Df Residuals:                  195400   BIC:                         4.885e+04
     Df Model:                          73                                         
@@ -920,7 +920,7 @@ print(gam2.summary())
              are typically lower than they should be, meaning that the tests reject the null too readily.
     None
 
-    C:\Users\luism\AppData\Local\Temp\ipykernel_68676\4115508990.py:4: UserWarning:
+    C:\Users\luism\AppData\Local\Temp\ipykernel_7400\4115508990.py:4: UserWarning:
 
     KNOWN BUG: p-values computed in this summary are likely much smaller than they should be. 
      
@@ -930,7 +930,7 @@ print(gam2.summary())
     github.com/dswah/pyGAM/issues/163 
 
 
-    C:\Users\luism\AppData\Local\Temp\ipykernel_68676\4115508990.py:5: UserWarning:
+    C:\Users\luism\AppData\Local\Temp\ipykernel_7400\4115508990.py:5: UserWarning:
 
     KNOWN BUG: p-values computed in this summary are likely much smaller than they should be. 
      
