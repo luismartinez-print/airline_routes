@@ -146,17 +146,17 @@ year_routes
 | Year | carrier_lg | Number of Routes |
 |------|------------|------------------|
 | i64  | str        | u32              |
-| 1993 | "UA"       | 1126             |
 | 1993 | "AA"       | 2102             |
-| 1993 | "NK"       | 7                |
+| 1993 | "UA"       | 1126             |
 | 1993 | "DL"       | 1607             |
+| 1993 | "NK"       | 7                |
 | 1994 | "NK"       | 2                |
 | …    | …          | …                |
 | 2023 | "DL"       | 891              |
-| 2023 | "F9"       | 107              |
-| 2023 | "G4"       | 216              |
-| 2023 | "AA"       | 1794             |
 | 2023 | "NK"       | 105              |
+| 2023 | "AA"       | 1794             |
+| 2023 | "UA"       | 1146             |
+| 2023 | "G4"       | 216              |
 
 </div>
 
@@ -282,17 +282,17 @@ rates_market
 | Year | carrier_lg | Average Rate | Average Market Share |
 |------|------------|--------------|----------------------|
 | i64  | str        | f64          | f64                  |
-| 1993 | "DL"       | 224.737063   | 0.655252             |
-| 1993 | "UA"       | 244.999103   | 0.555604             |
 | 1993 | "AA"       | 253.147574   | 0.605224             |
+| 1993 | "UA"       | 244.999103   | 0.555604             |
+| 1993 | "DL"       | 224.737063   | 0.655252             |
 | 1993 | "NK"       | 52.204286    | 0.837143             |
-| 1994 | "AA"       | 252.16015    | 0.609437             |
+| 1994 | "UA"       | 265.368947   | 0.534332             |
 | …    | …          | …            | …                    |
-| 2023 | "F9"       | 118.473458   | 0.722147             |
 | 2023 | "NK"       | 116.626286   | 0.590725             |
+| 2023 | "F9"       | 118.473458   | 0.722147             |
 | 2023 | "G4"       | 105.35662    | 0.877016             |
-| 2023 | "AA"       | 300.202664   | 0.664086             |
 | 2023 | "UA"       | 272.985419   | 0.711748             |
+| 2023 | "DL"       | 300.043861   | 0.600773             |
 
 </div>
 
@@ -416,38 +416,21 @@ full_data = (
 
 full_data = full_data.to_pandas()
 
-full_data
+print(full_data.head(10).to_markdown(index = False, tablefmt = 'github'))
 ```
 
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-&#10;    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-&#10;    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-
-|        | fare   | nsmiles | passengers | large_ms | lf_ms  | quarter | carrier_lg |
-|--------|--------|---------|------------|----------|--------|---------|------------|
-| 0      | 81.43  | 970     | 180        | 1.0000   | 1.0000 | 3       | G4         |
-| 1      | 208.93 | 970     | 19         | 0.4659   | 0.1193 | 3       | DL         |
-| 2      | 184.56 | 580     | 204        | 0.9968   | 0.9968 | 3       | WN         |
-| 3      | 182.64 | 580     | 264        | 0.9774   | 0.9774 | 3       | AA         |
-| 4      | 177.11 | 328     | 398        | 0.6061   | 0.3939 | 3       | WN         |
-| ...    | ...    | ...     | ...        | ...      | ...    | ...     | ...        |
-| 244338 | 278.70 | 665     | 207        | 0.7503   | 0.2359 | 1       | DL         |
-| 244339 | 148.69 | 724     | 277        | 0.8255   | 0.8255 | 1       | G4         |
-| 244340 | 330.19 | 724     | 70         | 0.8057   | 0.8057 | 1       | AA         |
-| 244341 | 95.65  | 550     | 178        | 1.0000   | 1.0000 | 1       | G4         |
-| 244342 | 330.15 | 550     | 57         | 0.5212   | 0.5212 | 1       | AA         |
-
-<p>244343 rows × 7 columns</p>
-</div>
+    |   fare |   nsmiles |   passengers |   large_ms |   lf_ms |   quarter | carrier_lg   |
+    |--------|-----------|--------------|------------|---------|-----------|--------------|
+    |  81.43 |       970 |          180 |     1      |  1      |         3 | G4           |
+    | 208.93 |       970 |           19 |     0.4659 |  0.1193 |         3 | DL           |
+    | 184.56 |       580 |          204 |     0.9968 |  0.9968 |         3 | WN           |
+    | 182.64 |       580 |          264 |     0.9774 |  0.9774 |         3 | AA           |
+    | 177.11 |       328 |          398 |     0.6061 |  0.3939 |         3 | WN           |
+    | 324.97 |      1974 |          153 |     0.4263 |  0.1609 |         3 | AA           |
+    | 315.9  |      1974 |           16 |     0.7285 |  0.7285 |         3 | WN           |
+    | 329.22 |      1974 |           22 |     0.5415 |  0.5415 |         3 | WN           |
+    | 255.89 |      1670 |          159 |     0.7212 |  0.7212 |         3 | WN           |
+    | 291.16 |      1670 |          151 |     0.4404 |  0.3197 |         3 | AA           |
 
 We can then move this into a pandas dataframe since most of the modules
 we will use, utilize pandas dataframes objects as arguments
@@ -584,8 +567,8 @@ print(lm2.summary())
     Dep. Variable:                   fare   R-squared:                       0.377
     Model:                            OLS   Adj. R-squared:                  0.377
     Method:                 Least Squares   F-statistic:                     1623.
-    Date:                Wed, 17 Jun 2026   Prob (F-statistic):               0.00
-    Time:                        12:03:14   Log-Likelihood:            -1.0866e+06
+    Date:                Tue, 30 Jun 2026   Prob (F-statistic):               0.00
+    Time:                        12:12:19   Log-Likelihood:            -1.0866e+06
     No. Observations:              195474   AIC:                         2.173e+06
     Df Residuals:                  195400   BIC:                         2.174e+06
     Df Model:                          73                                         
@@ -683,8 +666,8 @@ print(lm2.summary())
     Dep. Variable:               log_fare   R-squared:                       0.423
     Model:                            OLS   Adj. R-squared:                  0.423
     Method:                 Least Squares   F-statistic:                     1966.
-    Date:                Wed, 17 Jun 2026   Prob (F-statistic):               0.00
-    Time:                        12:03:14   Log-Likelihood:                -23976.
+    Date:                Tue, 30 Jun 2026   Prob (F-statistic):               0.00
+    Time:                        12:12:19   Log-Likelihood:                -23976.
     No. Observations:              195474   AIC:                         4.810e+04
     Df Residuals:                  195400   BIC:                         4.885e+04
     Df Model:                          73                                         
@@ -793,7 +776,6 @@ using it later on.
 
 ``` python
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
-
 def get_metrics(actual, predicted):
     mae = mean_absolute_error(actual, predicted)
     rmse = np.sqrt(mean_squared_error(actual, predicted))
@@ -801,6 +783,7 @@ def get_metrics(actual, predicted):
     print(f"MAE:  ${mae:.2f}")
     print(f"RMSE: ${rmse:.2f}")
     print(f"MAPE: {mape:.2%}")
+    return None
 ```
 
 Now we can get the predictions for both linear regressions
@@ -920,7 +903,7 @@ print(gam2.summary())
              are typically lower than they should be, meaning that the tests reject the null too readily.
     None
 
-    C:\Users\luism\AppData\Local\Temp\ipykernel_7400\4115508990.py:4: UserWarning:
+    C:\Users\luism\AppData\Local\Temp\ipykernel_3744\4115508990.py:4: UserWarning:
 
     KNOWN BUG: p-values computed in this summary are likely much smaller than they should be. 
      
@@ -930,7 +913,7 @@ print(gam2.summary())
     github.com/dswah/pyGAM/issues/163 
 
 
-    C:\Users\luism\AppData\Local\Temp\ipykernel_7400\4115508990.py:5: UserWarning:
+    C:\Users\luism\AppData\Local\Temp\ipykernel_3744\4115508990.py:5: UserWarning:
 
     KNOWN BUG: p-values computed in this summary are likely much smaller than they should be. 
      
@@ -998,4 +981,71 @@ get_metrics(test_data['fare'].values, gam2_pred)
 ## Neural Network
 
 For now we will develop a Neural Network, which is based on the linear
-combination of non linear activations
+combination of non linear activations. For this we will use PyTorch to
+define the arquitecture of the Neural Network but first we need to make
+some adjustments to the data.
+
+first we need to label encode or ‘One hot encoding’ this data, then
+neural networks are very sensible to the scale of the variables and the
+variances.
+
+Think of one variable that is in range 1-100 to for example the market
+share that is in a range of 0-1 this will explode the network, therefore
+we do a standard scaling meaning a mean of 0 and represent the data in
+how many standard deviations is from that mea this data, then neural
+networks are very sensible to the scale of the variables and the
+variances.
+
+Think of one variable that is in range 1-100 to for example the market
+share that is in a range of 0-1 this will explode the network, therefore
+we do a standard scaling meaning a mean of 0 and represent the data in
+how many standard deviations is from that mean
+
+``` python
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+x_train_nn = train_data.drop(['fare', 'log_fare'], axis = 1)
+x_test_nn = train_data['log_fare'].values
+
+num_cols = ['nsmiles', 'passengers', 'large_ms']
+cat_cols = ['carrier_lg', 'quarter']
+
+processor = ColumnTransformer(
+transformers = [
+    ('num', StandardScaler(), num_cols),
+    ('cat', OneHotEncoder(sparse_output = False, handle_unknown = 'ignore'), cat_cols)
+]
+)
+
+x_train_nn = processor.fit_transform(x_train_nn)
+
+x_train_nn
+```
+
+    array([[ 1.2044909 , -0.52949657, -0.91657706, ...,  0.        ,
+             1.        ,  0.        ],
+           [-0.53677033, -0.55095763, -0.1207869 , ...,  0.        ,
+             0.        ,  0.        ],
+           [ 1.07361179, -0.42024024, -1.54107606, ...,  0.        ,
+             0.        ,  1.        ],
+           ...,
+           [ 2.04240174, -0.45535835,  0.19859973, ...,  0.        ,
+             1.        ,  0.        ],
+           [-1.34053879, -0.27586582,  1.48595982, ...,  1.        ,
+             0.        ,  0.        ],
+           [-0.38739743, -0.27196381, -0.96118413, ...,  1.        ,
+             0.        ,  0.        ]])
+
+As you can see from this messy array, it just means in each instance how
+many standard deviations is that point from the mean.
+
+now for the test data it is just a matter of transforming it to the
+already ready processor
+
+``` python
+x_test_nn = test_data.drop(['fare', 'log_fare'], axis = 1)
+y_test_nn = test_data['log_fare'].values
+
+x_test_nn = processor.transform(x_test_nn)
+```

@@ -309,7 +309,7 @@ full_data = (
 
 full_data = full_data.to_pandas()
 
-full_data
+print(full_data.head(10).to_markdown(index = False, tablefmt = 'github'))
 
 ```
 We can then move this into a pandas dataframe since most of the modules we will use, utilize pandas dataframes objects as arguments
@@ -427,7 +427,6 @@ First let's create a function to give us this metrics, since we will be using it
 ```{python}
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
-
 def get_metrics(actual, predicted):
 	mae = mean_absolute_error(actual, predicted)
 	rmse = np.sqrt(mean_squared_error(actual, predicted))
@@ -435,6 +434,7 @@ def get_metrics(actual, predicted):
 	print(f"MAE:  ${mae:.2f}")
 	print(f"RMSE: ${rmse:.2f}")
 	print(f"MAPE: {mape:.2%}")
+	return None
 
 	
 
@@ -553,4 +553,49 @@ get_metrics(test_data['fare'].values, gam2_pred)
 
 ## Neural Network
 
-For now we will develop a Neural Network, which is based on the linear combination of non linear activations
+For now we will develop a Neural Network, which is based on the linear combination of non linear activations. For this we will use PyTorch to define the arquitecture of the Neural Network but first we need to make some adjustments to the data.
+
+first we need to label encode or 'One hot encoding' this data, then neural networks are very sensible to the scale of the variables and the variances.
+
+Think of one variable that is in range 1-100 to for example the market share that is in a range of 0-1 this will explode the network, therefore we do a standard scaling meaning a mean of 0 and represent the data in how many standard deviations is from that mea this data, then neural networks are very sensible to the scale of the variables and the variances.
+
+Think of one variable that is in range 1-100 to for example the market share that is in a range of 0-1 this will explode the network, therefore we do a standard scaling meaning a mean of 0 and represent the data in how many standard deviations is from that mean
+
+
+```{python}
+
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+
+x_train_nn = train_data.drop(['fare', 'log_fare'], axis = 1)
+x_test_nn = train_data['log_fare'].values
+
+num_cols = ['nsmiles', 'passengers', 'large_ms']
+cat_cols = ['carrier_lg', 'quarter']
+
+processor = ColumnTransformer(
+transformers = [
+	('num', StandardScaler(), num_cols),
+	('cat', OneHotEncoder(sparse_output = False, handle_unknown = 'ignore'), cat_cols)
+]
+)
+
+x_train_nn = processor.fit_transform(x_train_nn)
+
+x_train_nn
+
+```
+
+As you can see from this messy array, it just means in each instance how many standard deviations is that point from the mean.
+
+now for the test data  it is just a matter of transforming it to the already ready processor
+
+
+```{python}
+
+x_test_nn = test_data.drop(['fare', 'log_fare'], axis = 1)
+y_test_nn = test_data['log_fare'].values
+
+x_test_nn = processor.transform(x_test_nn)
+
+```
